@@ -18,6 +18,12 @@ from pyscf import gto, scf, ci
 from noci_jax import nocisd, slater, thouless, reshf
 from noci_jax.misc import pyscf_helper
 import copy
+import os
+
+save_dir = "./data/"
+if not os.path.exists(save_dir):
+    os.makedirs(save_dir)
+
 
 
 # Step 1: Set up the system
@@ -88,7 +94,8 @@ mf1 = copy.copy(mf)
 mf1.mo_coeff = mo_all[0]
 ci1 = ci.UCISD(mf1)
 e_corr, civec1 = ci1.kernel()
-t1, c1 = nocisd.compress(ci1, civec=civec1, dt1=dt, dt2=dt, tol2=1e-5)
+ci1_amps = nocisd.ucisd_amplitudes(ci1, civec=civec1, silent=True)
+t1, c1 = nocisd.compress(ci1_amps, dt1=dt, dt2=dt, tol2=1e-5)
 r1 = slater.tvecs_to_rmats(t1, nvir, nocc)
 r1_n = slater.rotate_rmats(r1, U_all[0])
 # E = slater.noci_energy(rmats, mo_coeff, h1e, h2e, return_mats=False, lc_coeffs=c1, e_nuc=e_nuc)
@@ -105,7 +112,8 @@ mf2 = copy.copy(mf)
 mf2.mo_coeff = mo_all[1]
 ci2= ci.UCISD(mf2)
 e_corr, civec2 = ci2.kernel()
-t2, c2 = nocisd.compress(ci2, civec=civec2, dt1=dt, dt2=dt, tol2=1e-5)
+ci2_amps = nocisd.ucisd_amplitudes(ci2, civec=civec2, silent=True)
+t2, c2 = nocisd.compress(ci2_amps, dt1=dt, dt2=dt, tol2=1e-5)
 # rotate t2 back to the MO basis
 r2 = slater.tvecs_to_rmats(t2, nvir, nocc)
 r2_n = slater.rotate_rmats(r2, U_all[1])

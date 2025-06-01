@@ -37,7 +37,8 @@ c0, c1, c2 = myci.cisdvec_to_amplitudes(civec)
 fcivec = myci.to_fcivec(civec, norb, nelec)
 
 dt = 0.1
-tmats, coeffs = nocisd.compress(myci, civec=civec, dt1=dt, dt2=dt, tol2=1e-5)
+ci_amps = nocisd.ucisd_amplitudes(myci, civec=civec, silent=True)
+tmats, coeffs = nocisd.compress(ci_amps, dt1=dt, dt2=dt, tol2=1e-5)
 nvir, nocc = tmats.shape[2:]
 rmats = slater.tvecs_to_rmats(tmats, nvir, nocc)
 

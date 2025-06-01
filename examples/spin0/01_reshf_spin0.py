@@ -6,7 +6,8 @@ CCSD(T): -109.2863
 '''
 
 from pyscf import gto, scf
-from noci_jax import thouless_spin0, pyscf_helper
+from noci_jax import thouless_spin0
+from noci_jax.misc import pyscf_helper
 from noci_jax import reshf_spin0 as optdets
 import time
 

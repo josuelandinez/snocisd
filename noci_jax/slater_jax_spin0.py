@@ -18,7 +18,10 @@ import numpy as np
 import jax.numpy as jnp
 import jax
 from noci_jax import slater
-from jax.config import config
+try:
+    from jax.config import config
+except:
+    from jax import config
 config.update("jax_enable_x64", True)
 # import os 
 # os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"]="false"

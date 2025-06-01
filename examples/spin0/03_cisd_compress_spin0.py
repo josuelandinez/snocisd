@@ -2,7 +2,8 @@ import numpy as np
 from pyscf import gto, scf, ci, fci, ao2mo
 np.set_printoptions(edgeitems=30, linewidth=100000, precision=5)
 from noci_jax import nocisd_spin0
-from noci_jax import slater, pyscf_helper
+from noci_jax import slater
+from noci_jax.misc import  pyscf_helper
 
 
 bl = 1.0

@@ -2,7 +2,8 @@ import numpy as np
 from pyscf import gto, scf, ci, fci
 np.set_printoptions(edgeitems=30, linewidth=100000, precision=5)
 from noci_jax import nocisd
-from noci_jax import slater, pyscf_helper
+from noci_jax import slater
+from noci_jax.misc import pyscf_helper
 
 
 bl = 1.0
@@ -33,19 +34,20 @@ e_corr, civec = myci.kernel()
 e_cisd = e_hf + e_corr 
 c0, c1, c2 = myci.cisdvec_to_amplitudes(civec)
 
-h1_mo, h2_mo = pyscf_helper.rotate_ham(mf)
-fcivec = myci.to_fcivec(civec, norb, nelec)
-print(fcivec)
-myfci = fci.FCI(mf)
-fcivec = np.loadtxt("./fcivec.txt")
-E = myfci.energy(h1_mo, h2_mo, fcivec, norb, nelec) + e_nuc
-# print(E)
-e, v = myfci.kernel()
-print(v)
-exit()
+#h1_mo, h2_mo = pyscf_helper.rotate_ham_spin0(mf)
+#fcivec = myci.to_fcivec(civec, norb, nelec)
+#print(fcivec)
+#myfci = fci.FCI(mf)
+#fcivec = np.loadtxt("./fcivec.txt")
+#E = myfci.energy(h1_mo, h2_mo, fcivec, norb, nelec) + e_nuc
+## print(E)
+#e, v = myfci.kernel()
+#print(v)
+#exit()
 
 dt = 0.1
-tmats, coeffs = nocisd.compress(myci, civec=civec, dt1=dt, dt2=dt, tol2=1e-5)
+ci_amps = nocisd.ucisd_amplitudes(myci, civec=civec, silent=True)
+tmats, coeffs = nocisd.compress(ci_amps, dt1=dt, dt2=dt, tol2=1e-5)
 nvir, nocc = tmats.shape[2:]
 rmats = slater.tvecs_to_rmats(tmats, nvir, nocc)
 

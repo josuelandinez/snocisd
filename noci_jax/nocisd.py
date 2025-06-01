@@ -169,7 +169,8 @@ def gen_nocisd_multiref_hsp(mf, nvir, nocc, dt=0.1, tol2=1e-5, silent=False):
     # first do HF 
     my_ci = ci.UCISD(mf)
     _, civec = my_ci.kernel()
-    t = compress(my_ci, civec=civec, dt1=dt, dt2=dt, tol2=tol2, 
+    ci_amps = ucisd_amplitudes(my_ci, civec=civec, flatten_c2=False)
+    t = compress(ci_amps, dt1=dt, dt2=dt, tol2=tol2, 
                  silent=silent, return_coeff=False)
     r = slater.tvecs_to_rmats(t, nvir, nocc)
     r_cisd = r[1:] # only choose the singles and doubles 
@@ -187,7 +188,8 @@ def gen_nocisd_multiref_hsp(mf, nvir, nocc, dt=0.1, tol2=1e-5, silent=False):
     my_mf.mo_coeff = np.array([Cb, Ca])
     my_ci = ci.UCISD(my_mf)
     _, civec = my_ci.kernel()
-    t, _ = compress(my_ci, civec=civec, dt1=dt, dt2=dt, tol2=tol2, silent=silent)
+    ci_amps = ucisd_amplitudes(my_ci, civec=civec, flatten_c2=False)
+    t, _ = compress(ci_amps, dt1=dt, dt2=dt, tol2=tol2, silent=silent)
     r = slater.tvecs_to_rmats(t, nvir, nocc)
     r = slater.rotate_rmats(r, np.array([U, U.conj().T]))
     r_cisd = np.vstack([r_cisd, r[1:]])
