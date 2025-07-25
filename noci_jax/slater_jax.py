@@ -598,7 +598,7 @@ def tvecs_to_mos(tvecs, mo_coeff, nvir, nocc):
     """
     
     # Step 1: Get rotation matrices R = [I; T]
-    rmats = tvecs_to_rmats(tvecs_opt, nvir, nocc)  # shape: (nvecs, 2, norb, nocc)
+    rmats = tvecs_to_rmats(tvecs, nvir, nocc)  # shape: (nvecs, 2, norb, nocc)
 
     # Step 2: Apply to MO coefficients
     rotated_mos = jnp.einsum("sij, nsjk -> nsik", mo_coeff, rmats)
