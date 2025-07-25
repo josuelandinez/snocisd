@@ -575,5 +575,37 @@ def _generalized_eigh(A, B):
 
     return e0, c0
 
+import numpy as np
+import jax.numpy as jnp
+
+def tvecs_to_mos(tvecs, mo_coeff, nvir, nocc):
+    """
+    Reconstruct rotated MOs from Thouless vectors.
+
+    Args:
+        tvecs: ndarray, shape (nvecs, 2, nvir, nocc)
+            Optimized Thouless vectors.
+        mo_coeff: ndarray, shape (2, norb, norb)
+            Reference molecular orbitals for spin alpha and beta.
+        nvir: int
+            Number of virtual orbitals.
+        nocc: int
+            Number of occupied orbitals.
+
+    Returns:
+        rotated_mos: ndarray, shape (nvecs, 2, norb, nocc)
+            Rotated spin-resolved MOs in MO basis (not AO basis).
+    """
+    
+    # Step 1: Get rotation matrices R = [I; T]
+    rmats = tvecs_to_rmats(tvecs_opt, nvir, nocc)  # shape: (nvecs, 2, norb, nocc)
+
+    # Step 2: Apply to MO coefficients
+    rotated_mos = jnp.einsum("sij, nsjk -> nsik", mo_coeff, rmats)
+
+    return rotated_mos
+
+    
+    
 if __name__ == "__main__":
     print("Main function:\n")

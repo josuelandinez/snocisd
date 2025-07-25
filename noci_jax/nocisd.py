@@ -22,6 +22,7 @@ from pyscf import ci
 from noci_jax import slater 
 import gc 
 import logging
+from noci_jax.misc import pyscf_helper
 
 def compress(ci_amps, dt1=0.1, dt2=0.1, tol2=1e-5, silent=True, return_coeff=True):
     '''
