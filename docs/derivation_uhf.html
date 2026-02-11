@@ -4,8 +4,9 @@
   <meta charset="utf-8" />
   <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="author" content="Documentation" />
-  <title>Extension of CISD Compression to UHF</title>
+  <meta name="author" content="Edgar J Landinez Borda" />
+  <meta name="dcterms.date" content="2026-02-11" />
+  <title>NOCI UHF Derivation</title>
   <style>
     html {
       color: #1a1a1a;
@@ -164,13 +165,15 @@
     }
   </style>
   <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-  <script src="/usr/share/javascript/mathjax/MathJax.js"
+  <script
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
   type="text/javascript"></script>
 </head>
 <body>
 <header id="title-block-header">
-<h1 class="title">Extension of CISD Compression to UHF</h1>
-<p class="author">Documentation</p>
+<h1 class="title">NOCI UHF Derivation</h1>
+<p class="author">Edgar J Landinez Borda</p>
+<p class="date">February 11, 2026</p>
 </header>
 <h1
 id="extension-of-cisd-compression-to-compact-non-orthogonal-determinant-expansions-the-uhf-case">Extension
@@ -380,53 +383,54 @@ class="math inline">\(\beta\beta\)</span>)</strong></td>
 </tbody>
 </table>
 <hr />
-<h3 id="energy-computation-via-generalized-eigenvalue-problem">6. Energy
-Computation via Generalized Eigenvalue Problem</h3>
-<p>To verify the accuracy of the compressed wavefunction, we must
-calculate its variational energy. Since the basis determinants <span
-class="math inline">\(|\Phi_k\rangle\)</span> are non-orthogonal, this
-requires solving a <strong>Generalized Eigenvalue Problem</strong>.</p>
-<h4 id="a.-constructing-the-matrices">A. Constructing the Matrices</h4>
-<p>We define the overlap matrix <span
-class="math inline">\(\mathbf{S}\)</span> and Hamiltonian matrix <span
-class="math inline">\(\mathbf{H}\)</span> in the basis of the generated
-determinants <span
-class="math inline">\(\{|\Phi_k\rangle\}\)</span>:</p>
-<p><strong>1. Overlap Matrix (<span
-class="math inline">\(\mathbf{S}\)</span>)</strong> <span
-class="math display">\[
-S_{uv} = \langle \Phi_u | \Phi_v \rangle = \det(\mathbf{C}_u^\dagger
-\mathbf{C}_v) \tag{11}
-\]</span> where <span class="math inline">\(\mathbf{C}_u\)</span> is the
-coefficient matrix of determinant <span
-class="math inline">\(u\)</span>.</p>
-<p><strong>2. Hamiltonian Matrix (<span
-class="math inline">\(\mathbf{H}\)</span>)</strong> <span
-class="math display">\[
-H_{uv} = \langle \Phi_u | \hat{H} | \Phi_v \rangle \tag{12}
-\]</span> This is computed using the <strong>Generalized Slater-Condon
-Rules</strong> (Löwdin formula) which accounts for non-orthogonality via
-cofactors of the overlap matrix.</p>
-<h4 id="b.-variational-solution">B. Variational Solution</h4>
-<p>The energy <span class="math inline">\(E\)</span> and coefficients
-<span class="math inline">\(\mathbf{c}\)</span> of the compressed
-wavefunction <span class="math inline">\(|\Psi_{NOCI}\rangle = \sum_k
-c_k |\Phi_k\rangle\)</span> are found by solving:</p>
+<h3 id="energy-computation-and-verification">6. Energy Computation and
+Verification</h3>
+<p>We employ two distinct methods to compute the energy of the
+compressed wavefunction. Comparing these provides a rigorous
+verification of the method’s correctness.</p>
+<h4 id="a.-analytic-energy-verification">A. Analytic Energy
+(Verification)</h4>
+<p>Since the non-orthogonal determinants are constructed to explicitly
+reproduce the Taylor expansion of the cluster operators, the expansion
+coefficients <span class="math inline">\(x_k\)</span> are known
+<strong>a priori</strong> (e.g., <span class="math inline">\(\pm
+1/2\delta\)</span> for singles, <span class="math inline">\(\pm
+1/4\delta^2\)</span> for doubles).</p>
+<p>We verify the compression by computing the expectation value using
+these fixed <strong>Analytic Coefficients</strong> <span
+class="math inline">\(\mathbf{c}_{\text{ana}}\)</span>:</p>
 <p><span class="math display">\[
-\mathbf{H} \mathbf{c} = E \mathbf{S} \mathbf{c} \tag{13}
+E_{\text{ana}} = \frac{\mathbf{c}_{\text{ana}}^\dagger \mathbf{H}
+\mathbf{c}_{\text{ana}}}{\mathbf{c}_{\text{ana}}^\dagger \mathbf{S}
+\mathbf{c}_{\text{ana}}} \tag{11}
 \]</span></p>
-<p>The lowest eigenvalue <span class="math inline">\(E_0\)</span>
-corresponds to the variational energy of the compressed state.</p>
+<p>If the compression is correct, <span
+class="math inline">\(E_{\text{ana}}\)</span> must match the reference
+CISD energy <span class="math inline">\(E_{\text{CISD}}\)</span> within
+the finite difference error <span
+class="math inline">\(O(\delta^2)\)</span>.</p>
+<h4 id="b.-variational-energy-optimization">B. Variational Energy
+(Optimization)</h4>
+<p>To find the optimal energy in the compressed subspace (which
+naturally includes higher-order relaxation effects like <span
+class="math inline">\(e^{\hat{T}}\)</span>), we treat the coefficients
+as variational parameters. We solve the <strong>Generalized Eigenvalue
+Problem</strong>:</p>
+<p><span class="math display">\[
+\mathbf{H} \mathbf{c}_{\text{opt}} = E_{\text{opt}} \mathbf{S}
+\mathbf{c}_{\text{opt}} \tag{12}
+\]</span></p>
+<p>where <span class="math inline">\(\mathbf{H}_{uv} = \langle \Phi_u |
+\hat{H} | \Phi_v \rangle\)</span> and <span
+class="math inline">\(\mathbf{S}_{uv} = \langle \Phi_u | \Phi_v
+\rangle\)</span>. The lowest eigenvalue <span
+class="math inline">\(E_{\text{opt}}\)</span> is the true NOCI
+energy.</p>
 <ul>
-<li><strong>Verification:</strong> If the compression is exact, <span
-class="math inline">\(E_0 \approx E_{\text{CISD}}\)</span>.</li>
-<li><strong>Bonus:</strong> Since <span
-class="math inline">\(|\Phi_k\rangle =
-e^{\hat{Z}_k}|\Phi_0\rangle\)</span>, the basis naturally includes
-disconnected higher-order excitations (e.g., <span
-class="math inline">\(\frac{1}{2}\hat{T}_2^2\)</span>). Thus, it is
-possible to recover energies slightly <strong>lower</strong> than linear
-CISD (capturing approximate CCSD correlation).</li>
+<li><strong>Success Condition:</strong> <span
+class="math inline">\(E_{\text{opt}} \le E_{\text{ana}}\)</span>. The
+variational optimization should always equal or improve upon the
+analytic construction.</li>
 </ul>
 <hr />
 <h1 id="appendices-detailed-derivations">Appendices: Detailed

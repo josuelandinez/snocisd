@@ -1,6 +1,7 @@
 ---
 title: "Extension of CISD Compression to Compact Non-Orthogonal Determinant Expansions: The UHF Case"
-author: "Documentation"
+author: "Edgar J Landinez Borda"
+date: "February 11, 2026"
 geometry: margin=1in
 output: pdf_document
 ---
@@ -136,38 +137,31 @@ $$
 
 ---
 
-### 6. Energy Computation via Generalized Eigenvalue Problem
+### 6. Energy Computation and Verification
 
-To verify the accuracy of the compressed wavefunction, we must calculate its variational energy. Since the basis determinants $|\Phi_k\rangle$ are non-orthogonal, this requires solving a **Generalized Eigenvalue Problem**.
+We employ two distinct methods to compute the energy of the compressed wavefunction. Comparing these provides a rigorous verification of the method's correctness.
 
-#### A. Constructing the Matrices
+#### A. Analytic Energy (Verification)
+Since the non-orthogonal determinants are constructed to explicitly reproduce the Taylor expansion of the cluster operators, the expansion coefficients $x_k$ are known **a priori** (e.g., $\pm 1/2\delta$ for singles, $\pm 1/4\delta^2$ for doubles).
 
-We define the overlap matrix $\mathbf{S}$ and Hamiltonian matrix $\mathbf{H}$ in the basis of the generated determinants $\{|\Phi_k\rangle\}$:
-
-**1. Overlap Matrix ($\mathbf{S}$)**
-$$
-S_{uv} = \langle \Phi_u | \Phi_v \rangle = \det(\mathbf{C}_u^\dagger \mathbf{C}_v) \tag{11}
-$$
-where $\mathbf{C}_u$ is the coefficient matrix of determinant $u$.
-
-**2. Hamiltonian Matrix ($\mathbf{H}$)**
-$$
-H_{uv} = \langle \Phi_u | \hat{H} | \Phi_v \rangle \tag{12}
-$$
-This is computed using the **Generalized Slater-Condon Rules** (Löwdin formula) which accounts for non-orthogonality via cofactors of the overlap matrix.
-
-#### B. Variational Solution
-
-The energy $E$ and coefficients $\mathbf{c}$ of the compressed wavefunction $|\Psi_{NOCI}\rangle = \sum_k c_k |\Phi_k\rangle$ are found by solving:
+We verify the compression by computing the expectation value using these fixed **Analytic Coefficients** $\mathbf{c}_{\text{ana}}$:
 
 $$
-\mathbf{H} \mathbf{c} = E \mathbf{S} \mathbf{c} \tag{13}
+E_{\text{ana}} = \frac{\mathbf{c}_{\text{ana}}^\dagger \mathbf{H} \mathbf{c}_{\text{ana}}}{\mathbf{c}_{\text{ana}}^\dagger \mathbf{S} \mathbf{c}_{\text{ana}}} \tag{11}
 $$
 
-The lowest eigenvalue $E_0$ corresponds to the variational energy of the compressed state.
+If the compression is correct, $E_{\text{ana}}$ must match the reference CISD energy $E_{\text{CISD}}$ within the finite difference error $O(\delta^2)$.
 
-* **Verification:** If the compression is exact, $E_0 \approx E_{\text{CISD}}$.
-* **Bonus:** Since $|\Phi_k\rangle = e^{\hat{Z}_k}|\Phi_0\rangle$, the basis naturally includes disconnected higher-order excitations (e.g., $\frac{1}{2}\hat{T}_2^2$). Thus, it is possible to recover energies slightly **lower** than linear CISD (capturing approximate CCSD correlation).
+#### B. Variational Energy (Optimization)
+To find the optimal energy in the compressed subspace (which naturally includes higher-order relaxation effects like $e^{\hat{T}}$), we treat the coefficients as variational parameters. We solve the **Generalized Eigenvalue Problem**:
+
+$$
+\mathbf{H} \mathbf{c}_{\text{opt}} = E_{\text{opt}} \mathbf{S} \mathbf{c}_{\text{opt}} \tag{12}
+$$
+
+where $\mathbf{H}_{uv} = \langle \Phi_u | \hat{H} | \Phi_v \rangle$ and $\mathbf{S}_{uv} = \langle \Phi_u | \Phi_v \rangle$. The lowest eigenvalue $E_{\text{opt}}$ is the true NOCI energy.
+
+* **Success Condition:** $E_{\text{opt}} \le E_{\text{ana}}$. The variational optimization should always equal or improve upon the analytic construction.
 
 ---
 
