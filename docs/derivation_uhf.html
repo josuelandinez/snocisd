@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="Documentation" />
+  <title>Extension of CISD Compression to UHF</title>
+  <style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="/usr/share/javascript/mathjax/MathJax.js"
+  type="text/javascript"></script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Extension of CISD Compression to UHF</h1>
+<p class="author">Documentation</p>
+</header>
+<h1
+id="extension-of-cisd-compression-to-compact-non-orthogonal-determinant-expansions-the-uhf-case">Extension
+of CISD Compression to Compact Non-Orthogonal Determinant Expansions:
+The UHF Case</h1>
+<h3 id="motivation">1. Motivation</h3>
+<p>The “Compressed CISD” method [1] offers a rigorous formalism for
+representing the exact CISD wavefunction using a compact basis of
+non-orthogonal Slater determinants (NODs). The original derivation,
+however, relies strictly on the <strong>Restricted Hartree-Fock
+(RHF)</strong> approximation, assuming spatial symmetry between <span
+class="math inline">\(\alpha\)</span> and <span
+class="math inline">\(\beta\)</span> orbitals (<span
+class="math inline">\(\phi_i^\alpha = \phi_i^\beta\)</span>).</p>
+<p>This assumption breaks down in:</p>
+<ol type="1">
+<li><strong>Open-Shell Systems</strong> (<span
+class="math inline">\(N_\alpha \neq N_\beta\)</span>), where the <span
+class="math inline">\(\alpha\)</span> and <span
+class="math inline">\(\beta\)</span> Hilbert spaces have different
+dimensions.</li>
+<li><strong>Spin-Polarized Systems</strong> (e.g., bond breaking,
+antiferromagnetism), where <span class="math inline">\(\phi_i^\alpha
+\neq \phi_i^\beta\)</span>. Even if electron counts are equal, the
+relaxation pathways for <span class="math inline">\(\alpha\)</span> and
+<span class="math inline">\(\beta\)</span> electrons differ.</li>
+</ol>
+<p>In the general case, the “relaxation terms” (<span
+class="math inline">\(\hat{U}^2\)</span> and <span
+class="math inline">\(\hat{V}^2\)</span>) that appear during finite
+difference approximations become “noise” rather than signal. We present
+a <strong>General UHF Extension</strong> that rigorously treats distinct
+<span class="math inline">\(\alpha\)</span> and <span
+class="math inline">\(\beta\)</span> spin manifolds using a
+<strong>4-Point Stencil</strong> to systematically eliminate these
+unphysical relaxation errors.</p>
+<hr />
+<h3 id="theoretical-framework">2. Theoretical Framework</h3>
+<p>The exact CISD wavefunction in the UHF basis is defined as:</p>
+<p><span class="math display">\[
+|\Psi_{\text{CISD}}\rangle = c_0 |\Phi_0\rangle + \hat{T}_1
+|\Phi_0\rangle + \hat{T}_2 |\Phi_0\rangle \tag{1}
+\]</span></p>
+<p>where <span class="math inline">\(\hat{T}_1\)</span> and <span
+class="math inline">\(\hat{T}_2\)</span> are cluster operators defined
+over spin-orbitals.</p>
+<h4 id="a.-single-excitations-hatt_1">A. Single Excitations (<span
+class="math inline">\(\hat{T}_1\)</span>)</h4>
+<p>The single excitation operator is strictly separable by spin:</p>
+<p><span class="math display">\[
+\hat{T}_1 = \hat{T}_{1\alpha} + \hat{T}_{1\beta} \tag{2}
+\]</span></p>
+<p>Using the <strong>Thouless Theorem</strong>, we define a determinant
+<span class="math inline">\(|\Phi(Z)\rangle = e^{\hat{Z}}
+|\Phi_0\rangle\)</span>. A linear single excitation is represented
+exactly by the finite difference of two determinants in the limit <span
+class="math inline">\(\delta \to 0\)</span>:</p>
+<p><span class="math display">\[
+\hat{T}_1 |\Phi_0\rangle = \lim_{\delta \to 0} \frac{1}{2\delta} \left(
+|\Phi(+\delta \hat{T}_1)\rangle - |\Phi(-\delta \hat{T}_1)\rangle
+\right) \tag{3}
+\]</span></p>
+<ul>
+<li><strong>Implementation:</strong> Requires <strong>2
+determinants</strong> (+ Reference).</li>
+</ul>
+<h4 id="b.-double-excitations-hatt_2">B. Double Excitations (<span
+class="math inline">\(\hat{T}_2\)</span>)</h4>
+<p>Due to spin orthogonality, the UHF double excitation operator splits
+into three distinct blocks:</p>
+<p><span class="math display">\[
+\hat{T}_2 = \hat{T}_{\alpha\alpha} + \hat{T}_{\beta\beta} +
+\hat{T}_{\alpha\beta} \tag{4}
+\]</span></p>
+<p>To compress these terms, we perform block-specific decompositions
+(SVD) and reconstruct the operators using finite difference
+stencils.</p>
+<p><em>(See Appendix A for the detailed derivation of why the 4-Point
+Stencil is required for these blocks).</em></p>
+<hr />
+<h3 id="the-mixed-spin-block-alphabeta">3. The Mixed-Spin Block (<span
+class="math inline">\(\alpha\beta\)</span>)</h3>
+<p>This term describes the correlation between distinguishable
+spins.</p>
+<p><span class="math display">\[
+\hat{T}_{\alpha\beta} = \sum_{ia, jb} t_{ia, jb} \, \hat{a}_a^\dagger
+\hat{a}_i \, \hat{b}_b^\dagger \hat{b}_j \tag{5}
+\]</span></p>
+<p>The amplitude matrix <span
+class="math inline">\(\mathbf{T}_{\alpha\beta}\)</span> is
+<strong>Rectangular</strong> (<span
+class="math inline">\(N_{\text{ex}}^\alpha \times
+N_{\text{ex}}^\beta\)</span>).</p>
+<h4 id="step-1-singular-value-decomposition-svd">Step 1: Singular Value
+Decomposition (SVD)</h4>
+<p>We decompose the rectangular matrix of amplitudes (<span
+class="math inline">\(u_k\)</span> and <span
+class="math inline">\(v_k\)</span> are vectors):</p>
+<p><span class="math display">\[
+\mathbf{T}_{\alpha\beta} = \sum_{k=1}^{R} \sigma_k \mathbf{u}_k
+\mathbf{v}_k^T \tag{6}
+\]</span></p>
+<p>This yields coupled operators <span class="math inline">\(\hat{Q}_k =
+\sigma_k \hat{U}_k \hat{V}_k\)</span>.</p>
+<h4 id="step-2-the-4-point-stencil-balanced-quartets">Step 2: The
+4-Point Stencil (Balanced Quartets)</h4>
+<p>To isolate the correlation product <span
+class="math inline">\(\hat{U}\hat{V}\)</span> without contamination from
+single-spin relaxation terms (<span class="math inline">\(\hat{U}^2,
+\hat{V}^2\)</span>), we employ a 4-point stencil on the sum and
+difference operators <span class="math inline">\(\hat{Q}_+ = \hat{U} +
+\hat{V}\)</span> and <span class="math inline">\(\hat{Q}_- = \hat{U} -
+\hat{V}\)</span>:</p>
+<p><span class="math display">\[
+\hat{U}\hat{V} |\Phi_0\rangle \approx \frac{1}{4\delta^2} \left[
+\sum_{\sigma=\pm} |\Phi(\sigma \delta Q_+)\rangle - \sum_{\sigma=\pm}
+|\Phi(\sigma \delta Q_-)\rangle \right] \tag{7}
+\]</span></p>
+<hr />
+<h3 id="the-same-spin-blocks-alphaalpha-betabeta">4. The Same-Spin
+Blocks (<span class="math inline">\(\alpha\alpha\)</span> / <span
+class="math inline">\(\beta\beta\)</span>)</h3>
+<p>The amplitude tensor must be <strong>Antisymmetric</strong> due to
+the Pauli exclusion principle (<span class="math inline">\(t_{ij}^{ab} =
+-t_{ji}^{ab}\)</span>):</p>
+<p><span class="math display">\[
+\mathbf{T}_{\alpha\alpha}^T = -\mathbf{T}_{\alpha\alpha} \tag{8}
+\]</span></p>
+<h4 id="step-1-skew-symmetric-decomposition">Step 1: Skew-Symmetric
+Decomposition</h4>
+<p>We use the canonical block-diagonal decomposition for skew-symmetric
+matrices, yielding pairs of vectors <span
+class="math inline">\(\mathbf{l}_k, \mathbf{r}_k\)</span> corresponding
+to the singular values <span
+class="math inline">\(\sigma_k\)</span>:</p>
+<p><span class="math display">\[
+\mathbf{T}_{\alpha\alpha} = \sum_{k=1}^{R/2} \sigma_k (\mathbf{l}_k
+\mathbf{r}_k^T - \mathbf{r}_k \mathbf{l}_k^T) \tag{9}
+\]</span></p>
+<h4 id="step-2-representation-via-identity">Step 2: Representation via
+Identity</h4>
+<p>Using the 4-Point Stencil on <span class="math inline">\(Q_+ =
+L+R\)</span> and <span class="math inline">\(Q_- = L-R\)</span>, we
+extract the product:</p>
+<p><span class="math display">\[
+\hat{L}\hat{R} |\Phi_0\rangle \approx \frac{1}{4\delta^2} \left[
+\sum_{\sigma=\pm} |\Phi(\sigma \delta Q_+)\rangle - \sum_{\sigma=\pm}
+|\Phi(\sigma \delta Q_-)\rangle \right] \tag{10}
+\]</span></p>
+<p>The antisymmetry (<span class="math inline">\(\hat{L}\hat{R} -
+\hat{R}\hat{L}\)</span>) is automatically enforced by the Slater
+determinant structure acting on the vacuum state.</p>
+<hr />
+<h3 id="summary-and-cost-analysis">5. Summary and Cost Analysis</h3>
+<p>The final compact wavefunction is a linear combination of
+non-orthogonal determinants:</p>
+<p><span class="math display">\[
+|\Psi_{\text{NOCI}}\rangle = c_0 |\Phi_0\rangle + \sum_{k} x_k
+|\Phi_k\rangle
+\]</span></p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Component</th>
+<th style="text-align: left;">Equation</th>
+<th style="text-align: left;">Determinants Added</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>Reference</strong></td>
+<td style="text-align: left;"><span
+class="math inline">\(|\Phi_0\rangle\)</span></td>
+<td style="text-align: left;">1</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Singles</strong></td>
+<td style="text-align: left;">Eq. 3</td>
+<td style="text-align: left;">2</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Doubles (<span
+class="math inline">\(\alpha\beta\)</span>)</strong></td>
+<td style="text-align: left;">Eq. 7</td>
+<td style="text-align: left;"><span class="math inline">\(4 \times
+\text{Rank}(\alpha\beta)\)</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Doubles (<span
+class="math inline">\(\alpha\alpha\)</span>)</strong></td>
+<td style="text-align: left;">Eq. 10</td>
+<td style="text-align: left;"><span class="math inline">\(4 \times
+\text{Rank}(\alpha\alpha)\)</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Doubles (<span
+class="math inline">\(\beta\beta\)</span>)</strong></td>
+<td style="text-align: left;">Eq. 10</td>
+<td style="text-align: left;"><span class="math inline">\(4 \times
+\text{Rank}(\beta\beta)\)</span></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="energy-computation-via-generalized-eigenvalue-problem">6. Energy
+Computation via Generalized Eigenvalue Problem</h3>
+<p>To verify the accuracy of the compressed wavefunction, we must
+calculate its variational energy. Since the basis determinants <span
+class="math inline">\(|\Phi_k\rangle\)</span> are non-orthogonal, this
+requires solving a <strong>Generalized Eigenvalue Problem</strong>.</p>
+<h4 id="a.-constructing-the-matrices">A. Constructing the Matrices</h4>
+<p>We define the overlap matrix <span
+class="math inline">\(\mathbf{S}\)</span> and Hamiltonian matrix <span
+class="math inline">\(\mathbf{H}\)</span> in the basis of the generated
+determinants <span
+class="math inline">\(\{|\Phi_k\rangle\}\)</span>:</p>
+<p><strong>1. Overlap Matrix (<span
+class="math inline">\(\mathbf{S}\)</span>)</strong> <span
+class="math display">\[
+S_{uv} = \langle \Phi_u | \Phi_v \rangle = \det(\mathbf{C}_u^\dagger
+\mathbf{C}_v) \tag{11}
+\]</span> where <span class="math inline">\(\mathbf{C}_u\)</span> is the
+coefficient matrix of determinant <span
+class="math inline">\(u\)</span>.</p>
+<p><strong>2. Hamiltonian Matrix (<span
+class="math inline">\(\mathbf{H}\)</span>)</strong> <span
+class="math display">\[
+H_{uv} = \langle \Phi_u | \hat{H} | \Phi_v \rangle \tag{12}
+\]</span> This is computed using the <strong>Generalized Slater-Condon
+Rules</strong> (Löwdin formula) which accounts for non-orthogonality via
+cofactors of the overlap matrix.</p>
+<h4 id="b.-variational-solution">B. Variational Solution</h4>
+<p>The energy <span class="math inline">\(E\)</span> and coefficients
+<span class="math inline">\(\mathbf{c}\)</span> of the compressed
+wavefunction <span class="math inline">\(|\Psi_{NOCI}\rangle = \sum_k
+c_k |\Phi_k\rangle\)</span> are found by solving:</p>
+<p><span class="math display">\[
+\mathbf{H} \mathbf{c} = E \mathbf{S} \mathbf{c} \tag{13}
+\]</span></p>
+<p>The lowest eigenvalue <span class="math inline">\(E_0\)</span>
+corresponds to the variational energy of the compressed state.</p>
+<ul>
+<li><strong>Verification:</strong> If the compression is exact, <span
+class="math inline">\(E_0 \approx E_{\text{CISD}}\)</span>.</li>
+<li><strong>Bonus:</strong> Since <span
+class="math inline">\(|\Phi_k\rangle =
+e^{\hat{Z}_k}|\Phi_0\rangle\)</span>, the basis naturally includes
+disconnected higher-order excitations (e.g., <span
+class="math inline">\(\frac{1}{2}\hat{T}_2^2\)</span>). Thus, it is
+possible to recover energies slightly <strong>lower</strong> than linear
+CISD (capturing approximate CCSD correlation).</li>
+</ul>
+<hr />
+<h1 id="appendices-detailed-derivations">Appendices: Detailed
+Derivations</h1>
+<h3
+id="appendix-a-explicit-derivation-of-3-point-vs.-4-point-stencils">Appendix
+A: Explicit Derivation of 3-Point vs. 4-Point Stencils</h3>
+<p><strong>Context:</strong> In the restricted case (<span
+class="math inline">\(N_\alpha = N_\beta\)</span>), “relaxation terms”
+(<span class="math inline">\(\hat{U}^2\)</span> and <span
+class="math inline">\(\hat{V}^2\)</span>) are harmless or even helpful
+because symmetry allows them to be absorbed into the single coefficient.
+In the general case, they become “noise” that needs to be cancelled.</p>
+<p>Here is the explicit, step-by-step derivation for the mixed-spin
+block (<span class="math inline">\(\hat{U}_\alpha
+\hat{V}_\beta\)</span>), showing exactly why the determinant counts
+differ.</p>
+<h4 id="the-goal">1. The Goal</h4>
+<p>We want to represent the correlation operator:</p>
+<p><span class="math display">\[
+\hat{O}_{corr} = \hat{U}_\alpha \hat{V}_\beta
+\]</span></p>
+<p>using Thouless determinants <span
+class="math inline">\(|\Phi(\dots)\rangle\)</span>.</p>
+<ul>
+<li><span class="math inline">\(\hat{U}_\alpha\)</span>: Pure <span
+class="math inline">\(\alpha\)</span> excitation (behaves like <span
+class="math inline">\(T_1^\alpha\)</span>).</li>
+<li><span class="math inline">\(\hat{V}_\beta\)</span>: Pure <span
+class="math inline">\(\beta\)</span> excitation (behaves like <span
+class="math inline">\(T_1^\beta\)</span>).</li>
+<li>They commute: <span class="math inline">\([\hat{U}, \hat{V}] =
+0\)</span>.</li>
+</ul>
+<h4 id="derivation-of-the-3-point-stencil">2. Derivation of the 3-Point
+Stencil</h4>
+<p><em>Used in the original paper for Restricted Singlets.</em></p>
+<p>We define a combined operator <span class="math inline">\(\hat{Q} =
+\hat{U} + \hat{V}\)</span>. We construct three determinants:</p>
+<ol type="1">
+<li><strong>Reference:</strong> <span
+class="math inline">\(|\Phi_0\rangle\)</span> (Scaling factor <span
+class="math inline">\(\delta = 0\)</span>)</li>
+<li><strong>Positive Step:</strong> <span
+class="math inline">\(|\Phi(+\delta \hat{Q})\rangle\)</span></li>
+<li><strong>Negative Step:</strong> <span
+class="math inline">\(|\Phi(-\delta \hat{Q})\rangle\)</span></li>
+</ol>
+<p><strong>Step A: Taylor Expansion</strong></p>
+<p>The Thouless determinant can be expanded as an exponential:</p>
+<p><span class="math display">\[
+|\Phi(\delta \hat{Q})\rangle = e^{\delta(\hat{U}+\hat{V})}
+|\Phi_0\rangle
+\]</span></p>
+<p>Using the Taylor series <span class="math inline">\(e^x = 1 + x +
+\frac{x^2}{2} + \dots\)</span>:</p>
+<p><span class="math display">\[
+|\Phi(+\delta \hat{Q})\rangle = \left[ 1 + \delta(\hat{U}+\hat{V}) +
+\frac{\delta^2}{2}(\hat{U}+\hat{V})^2 + O(\delta^3) \right]
+|\Phi_0\rangle
+\]</span></p>
+<p><span class="math display">\[
+|\Phi(-\delta \hat{Q})\rangle = \left[ 1 - \delta(\hat{U}+\hat{V}) +
+\frac{\delta^2}{2}(\hat{U}+\hat{V})^2 - O(\delta^3) \right]
+|\Phi_0\rangle
+\]</span></p>
+<p><strong>Step B: The Central Difference Sum</strong></p>
+<p>Add the two equations together:</p>
+<p><span class="math display">\[
+|\Phi(+\delta)\rangle + |\Phi(-\delta)\rangle = 2|\Phi_0\rangle +
+\delta^2 (\hat{U}+\hat{V})^2 |\Phi_0\rangle + O(\delta^4)
+\]</span></p>
+<p>Expand the square term <span
+class="math inline">\((\hat{U}+\hat{V})^2 = \hat{U}^2 + \hat{V}^2 +
+2\hat{U}\hat{V}\)</span>:</p>
+<p><span class="math display">\[
+|\Phi(+\delta)\rangle + |\Phi(-\delta)\rangle - 2|\Phi_0\rangle =
+\delta^2 (\hat{U}^2 + \hat{V}^2 + \mathbf{2\hat{U}\hat{V}})
+|\Phi_0\rangle
+\]</span></p>
+<p><strong>Step C: The Result</strong></p>
+<p>Solving for our target <span
+class="math inline">\(\hat{U}\hat{V}\)</span>:</p>
+<p><span class="math display">\[
+\mathbf{\hat{U}\hat{V}} |\Phi_0\rangle \approx
+\underbrace{\frac{|\Phi(+\delta)\rangle + |\Phi(-\delta)\rangle -
+2|\Phi_0\rangle}{2\delta^2}}_{\text{Numerical 2nd Derivative}} -
+\underbrace{\frac{1}{2}(\hat{U}^2 +
+\hat{V}^2)|\Phi_0\rangle}_{\text{Relaxation Error}}
+\]</span></p>
+<ul>
+<li><strong>The Issue:</strong> We are left with <span
+class="math inline">\(-\frac{1}{2}(\hat{U}^2 + \hat{V}^2)\)</span>. In
+the general case (<span class="math inline">\(\hat{U} \neq
+\hat{V}\)</span>), we cannot separate this “error” from the signal.</li>
+</ul>
+<h4 id="derivation-of-the-4-point-stencil">3. Derivation of the 4-Point
+Stencil</h4>
+<p><em>Used in the General Code (“Balanced Quartets”).</em></p>
+<p>We need to cancel the <span class="math inline">\(\hat{U}^2 +
+\hat{V}^2\)</span> terms. We use a Mixed Partial Derivative approach
+involving two axes of rotation.</p>
+<p>Define two operators:</p>
+<ol type="1">
+<li><span class="math inline">\(\hat{Q}_+ = \hat{U} +
+\hat{V}\)</span></li>
+<li><span class="math inline">\(\hat{Q}_- = \hat{U} -
+\hat{V}\)</span></li>
+</ol>
+<p>We construct four determinants (plus reference):</p>
+<ul>
+<li><span class="math inline">\(|\Phi(+\delta Q_+)\rangle, |\Phi(-\delta
+Q_+)\rangle\)</span></li>
+<li><span class="math inline">\(|\Phi(+\delta Q_-)\rangle, |\Phi(-\delta
+Q_-)\rangle\)</span></li>
+</ul>
+<p><strong>Step A: Expansion of <span class="math inline">\(Q_+\)</span>
+(Sum)</strong></p>
+<p>From the 3-point derivation above, we know:</p>
+<p><span class="math display">\[
+\text{Sum}_+ = |\Phi(+\delta Q_+)\rangle + |\Phi(-\delta Q_+)\rangle
+\approx 2|\Phi_0\rangle + \delta^2 (\hat{U}^2 + \hat{V}^2 +
+\mathbf{2\hat{U}\hat{V}})
+\]</span></p>
+<p><strong>Step B: Expansion of <span class="math inline">\(Q_-\)</span>
+(Difference)</strong></p>
+<p>Now expand <span class="math inline">\((\hat{U}-\hat{V})^2 =
+\hat{U}^2 + \hat{V}^2 - 2\hat{U}\hat{V}\)</span>:</p>
+<p><span class="math display">\[
+\text{Sum}_- = |\Phi(+\delta Q_-)\rangle + |\Phi(-\delta Q_-)\rangle
+\approx 2|\Phi_0\rangle + \delta^2 (\hat{U}^2 + \hat{V}^2 -
+\mathbf{2\hat{U}\hat{V}})
+\]</span></p>
+<p><strong>Step C: The Subtraction (Cancellation)</strong></p>
+<p>Subtract <span class="math inline">\(\text{Sum}_-\)</span> from <span
+class="math inline">\(\text{Sum}_+\)</span>:</p>
+<p><span class="math display">\[
+\text{Sum}_+ - \text{Sum}_- = \delta^2 [ (\hat{U}^2 + \hat{V}^2 +
+2\hat{U}\hat{V}) - (\hat{U}^2 + \hat{V}^2 - 2\hat{U}\hat{V}) ]
+\]</span></p>
+<p>The squared terms <span class="math inline">\(\hat{U}^2\)</span> and
+<span class="math inline">\(\hat{V}^2\)</span> cancel exactly:</p>
+<p><span class="math display">\[
+\text{Sum}_+ - \text{Sum}_- = \delta^2 (4\hat{U}\hat{V})
+\]</span></p>
+<p><strong>Step D: The Result</strong></p>
+<p><span class="math display">\[
+\mathbf{\hat{U}\hat{V}} |\Phi_0\rangle \approx \frac{1}{4\delta^2}
+\left[ \Big(|\Phi(Q_+)\rangle + |\Phi(-Q_+)\rangle\Big) -
+\Big(|\Phi(Q_-)\rangle + |\Phi(-Q_-)\rangle\Big) \right]
+\]</span></p>
+<ul>
+<li><strong>The Benefit:</strong> Pure correlation term. Zero relaxation
+error.</li>
+</ul>
+<hr />
+<h3
+id="appendix-b-formal-proof-of-skew-symmetric-decomposition">Appendix B:
+Formal Proof of Skew-Symmetric Decomposition</h3>
+<p><strong>Theorem:</strong> Any real skew-symmetric matrix <span
+class="math inline">\(\mathbf{A}\)</span> (<span
+class="math inline">\(\mathbf{A}^T = -\mathbf{A}\)</span>) can be
+block-diagonalized.</p>
+<p><strong>Proof:</strong></p>
+<ol type="1">
+<li>Since <span class="math inline">\(\mathbf{A}\)</span> is real
+skew-symmetric, <span class="math inline">\(i\mathbf{A}\)</span> is
+Hermitian. Eigenvalues are purely imaginary pairs <span
+class="math inline">\(\pm i\sigma_k\)</span>.</li>
+<li>Let <span class="math inline">\(\mathbf{z} = \mathbf{x} +
+i\mathbf{y}\)</span> be an eigenvector of <span
+class="math inline">\(\mathbf{A}\)</span> with eigenvalue <span
+class="math inline">\(i\sigma\)</span>. <span class="math display">\[
+\mathbf{A}(\mathbf{x} + i\mathbf{y}) = i\sigma(\mathbf{x} + i\mathbf{y})
+= -\sigma \mathbf{y} + i\sigma \mathbf{x}
+\]</span></li>
+<li>Separating components: <span class="math display">\[
+\mathbf{A}\mathbf{x} = -\sigma \mathbf{y}, \quad \mathbf{A}\mathbf{y} =
+\sigma \mathbf{x} \tag{B.1}
+\]</span></li>
+<li>In the subspace <span class="math inline">\(\{\mathbf{x},
+\mathbf{y}\}\)</span>, <span class="math inline">\(\mathbf{A}\)</span>
+acts as <span class="math inline">\(\begin{pmatrix} 0 &amp; \sigma \\
+-\sigma &amp; 0 \end{pmatrix}\)</span>. Normalizing <span
+class="math inline">\(\mathbf{x} \to \mathbf{L}\)</span> and <span
+class="math inline">\(\mathbf{y} \to \mathbf{R}\)</span>: <span
+class="math display">\[
+\mathbf{A} = \sum_k \sigma_k (\mathbf{L}_k \mathbf{R}_k^T - \mathbf{R}_k
+\mathbf{L}_k^T) \tag{B.2}
+\]</span></li>
+</ol>
+<p><strong>Conclusion:</strong> This justifies Eq. 9 for same-spin
+blocks.</p>
+<hr />
+<h3 id="appendix-c-construction-of-non-orthogonal-determinants">Appendix
+C: Construction of Non-Orthogonal Determinants</h3>
+<p><strong>Context:</strong> This section details how the abstract
+Thouless rotation operator <span
+class="math inline">\(e^{\hat{Z}}\)</span> is explicitly converted into
+the coefficient matrix used in the code.</p>
+<p><strong>Step 1: The Operator Definition</strong></p>
+<p>The Thouless operator <span class="math inline">\(\hat{Z}\)</span>
+promotes electrons from occupied orbitals <span
+class="math inline">\(i\)</span> to virtual orbitals <span
+class="math inline">\(a\)</span>:</p>
+<p><span class="math display">\[
+\hat{Z} = \sum_{ai} Z_{ai} \hat{a}_a^\dagger \hat{a}_i
+\]</span></p>
+<p>We seek the new orbital set <span
+class="math inline">\(\tilde{\phi}\)</span> such that <span
+class="math inline">\(|\Phi(Z)\rangle = \det(\tilde{\phi}_1 \dots
+\tilde{\phi}_N) = e^{\hat{Z}} |\Phi_0\rangle\)</span>.</p>
+<p><strong>Step 2: The Nilpotency Property</strong></p>
+<p>Consider the action of <span
+class="math inline">\(e^{\hat{Z}}\)</span> on a single occupied orbital
+<span class="math inline">\(\phi_i\)</span>:</p>
+<p><span class="math display">\[
+\tilde{\phi}_i = e^{\hat{Z}} \phi_i = \left( 1 + \hat{Z} +
+\frac{1}{2}\hat{Z}^2 + \dots \right) \phi_i
+\]</span></p>
+<ul>
+<li><strong>First Term:</strong> <span class="math inline">\(1 \cdot
+\phi_i = \phi_i\)</span> (Original occupied orbital).</li>
+<li><strong>Second Term:</strong> <span class="math inline">\(\hat{Z}
+\phi_i = \sum_a Z_{ai} \phi_a\)</span> (Excitation to virtual
+space).</li>
+<li><strong>Third Term:</strong> <span class="math inline">\(\hat{Z}^2
+\phi_i = \hat{Z} (\sum_a Z_{ai} \phi_a)\)</span>. The operator <span
+class="math inline">\(\hat{Z}\)</span> attempts to annihilate an
+occupied state (<span class="math inline">\(\hat{a}_i\)</span>), but the
+state <span class="math inline">\(\sum Z_{ai} \phi_a\)</span> is
+entirely virtual. Thus, <span class="math inline">\(\hat{Z}^2 \phi_i =
+0\)</span>.</li>
+</ul>
+<p>Since <span class="math inline">\(\hat{Z}^n \phi_i = 0\)</span> for
+<span class="math inline">\(n \ge 2\)</span>, the series truncates
+exactly after the first order:</p>
+<p><span class="math display">\[
+\tilde{\phi}_i = \phi_i + \sum_a Z_{ai} \phi_a \tag{C.1}
+\]</span></p>
+<p><strong>Step 3: Matrix Construction</strong></p>
+<p>In the code, we represent orbitals as column vectors in the full
+basis (Occupied <span class="math inline">\(\oplus\)</span>
+Virtual).</p>
+<ul>
+<li>The original occupied orbital <span
+class="math inline">\(\phi_i\)</span> corresponds to the unit vector
+<span class="math inline">\(\mathbf{e}_i\)</span> in the occupied
+block.</li>
+<li>The correction term <span class="math inline">\(\sum Z_{ai}
+\phi_a\)</span> corresponds to the vector <span
+class="math inline">\(\mathbf{z}_i\)</span> in the virtual block.</li>
+</ul>
+<p>Stacking these vectors for all <span class="math inline">\(N\)</span>
+electrons yields the coefficient matrix:</p>
+<p><span class="math display">\[
+\mathbf{C}(Z) = \begin{pmatrix} \mathbf{I}_{occ} \\ \mathbf{Z}_{vir
+\times occ} \end{pmatrix} \tag{C.2}
+\]</span></p>
+<p>This matrix <span class="math inline">\(\mathbf{C}(Z)\)</span> is
+what is passed to the NOCI solver. It represents the Thouless-rotated
+determinant exactly.</p>
+<hr />
+<h1 id="bibliography">Bibliography</h1>
+<p>[1] Sun, C., Gao, F., &amp; Scuseria G. E.. (2024). <em>Selected
+non-orthogonal configuration interaction with compressed single and
+double excitations</em>. arXiv preprint arXiv:2403.02350.</p>
+</body>
+</html>
