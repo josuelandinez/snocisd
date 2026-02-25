@@ -1,10 +1,14 @@
-# noci_jax/slater_general.py
-
 import jax.numpy as jnp
 import jax
+import numpy as np 
+import scipy.linalg  # Required for robust CPU solver
 from jax import config
 
-# ENABLE x64 PRECISION
+# 1. FORCE CPU BACKEND
+# This prevents GPU OOM errors and "stuck" compilations
+config.update("jax_platform_name", "cpu")
+
+# 2. ENABLE x64 PRECISION
 config.update("jax_enable_x64", True)
 
 def tvecs_to_rmats(tvecs, nvir, nocc):
@@ -27,8 +31,8 @@ def tvecs_to_rmats(tvecs, nvir, nocc):
 
 def build_noci_matrices(rmats, mo_coeff, h1e, h2e, e_nuc=0.0):
     '''
-    Constructs the Hamiltonian (H) and Overlap (S) matrices 
-    for the Non-Orthogonal Configuration Interaction.
+    Standard (Unbatched) NOCI Matrix Construction.
+    Running on CPU ensures stability for medium-sized basis sets.
     '''
     ra, rb = rmats
     Ca, Cb = mo_coeff[0], mo_coeff[1]
@@ -69,62 +73,55 @@ def build_noci_matrices(rmats, mo_coeff, h1e, h2e, e_nuc=0.0):
     hmat = (E1 + E2) * smat
     hmat = 0.5 * (hmat + hmat.T)
     
-    # Add nuclear repulsion to H
+    # Add nuclear repulsion
     hmat = hmat + smat * e_nuc
 
     return smat, hmat
 
 def noci_energy(rmats, mo_coeff, h1e, h2e, e_nuc=0.0, tol=1e-10):
-    '''
-    General NOCI Energy.
-    Standard Real-Valued Variational Solver.
-    '''
     smat, hmat = build_noci_matrices(rmats, mo_coeff, h1e, h2e, e_nuc)
     return solve_lc_coeffs(hmat, smat, tol=tol)
 
 def compute_energy_from_coeffs(rmats, mo_coeff, h1e, h2e, e_nuc, coeffs, tol=1e-10):
-    '''
-    Computes the expectation value E = <Psi|H|Psi> / <Psi|Psi>
-    using a fixed set of coefficients.
-    '''
     smat, hmat = build_noci_matrices(rmats, mo_coeff, h1e, h2e, e_nuc)
-    
     c_vec = jnp.array(coeffs)
-    
-    # E = c.T @ H @ c / c.T @ S @ c
     num = c_vec.T @ hmat @ c_vec
     den = c_vec.T @ smat @ c_vec
-    
     return num / den
 
-def solve_lc_coeffs(hmat, smat, tol=1e-8):
+def solve_lc_coeffs(hmat, smat, tol=1e-10):
     '''
-    Robust Generalized Eigenvalue Solver.
-    
-    Crucial fix: Increased default tolerance to 1e-8 to handle
-    linear dependencies introduced by small dt stencils.
+    Robust Generalized Eigenvalue Solver (SciPy/CPU).
+    Prevents variational collapse by using LAPACK dsyevd.
     '''
-    s_eig, s_vec = jnp.linalg.eigh(smat)
+    # Convert JAX arrays to NumPy for SciPy
+    h_np = np.array(hmat)
+    s_np = np.array(smat)
     
-    # Filter small eigenvalues (Linear Dependency)
+    # 1. Diagonalize S (Overlap)
+    s_eig, s_vec = scipy.linalg.eigh(s_np)
+    
+    # 2. Filter Singularities
     keep_mask = s_eig > tol
     s_eig_kept = s_eig[keep_mask]
     s_vec_kept = s_vec[:, keep_mask]
     
-    if s_eig_kept.shape[0] == 0:
-         # Fallback if all eigenvalues are small (should not happen with Ref det)
-         return jnp.mean(jnp.diag(hmat))
+    if len(s_eig_kept) == 0:
+         return np.mean(np.diag(h_np))
 
-    # Canonical Orthogonalization
-    inv_sqrt_s = 1.0 / jnp.sqrt(s_eig_kept)
-    X = s_vec_kept @ jnp.diag(inv_sqrt_s)
+    # 3. Canonical Orthogonalization
+    inv_sqrt_s = 1.0 / np.sqrt(s_eig_kept)
+    X = s_vec_kept @ np.diag(inv_sqrt_s)
     
-    h_prime = X.conj().T @ hmat @ X
-    vals, _ = jnp.linalg.eigh(h_prime)
+    # 4. Transform H
+    h_prime = X.T @ h_np @ X
+    
+    # 5. Diagonalize H'
+    vals, _ = scipy.linalg.eigh(h_prime)
     
     return vals[0]
 
-# ... [Keep rotate_rmats and orthonormal_mos as they were] ...
+# [Keep rotate_rmats, orthonormal_mos, etc.]
 def rotate_rmats(rmats, U):
     ra, rb = rmats
     Ua, Ub = U
