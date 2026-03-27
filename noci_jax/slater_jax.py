@@ -421,9 +421,8 @@ def make_rdm12(rmats, mo_coeff, lc_coeff):
     dm2s_dd = jnp.einsum("nmij, nmkl -> nmijkl", dm1_d, dm1_d) \
              - jnp.einsum("nmil, nmkj -> nmijkl", dm1_d, dm1_d)
     dm2s_ud = jnp.einsum("nmij, nmkl -> nmijkl", dm1_u, dm1_d)
-    dm2s_du = jnp.einsum("nmij, nmkl -> nmijkl", dm1_d, dm1_u)
-
-    dm2s = jnp.array([dm2s_uu, dm2s_ud, dm2s_du, dm2s_dd])
+    
+    dm2s = jnp.array([dm2s_uu, dm2s_ud, dm2s_dd])
     dm2s = jnp.einsum("snmijkl, nm -> snmijkl", dm2s, smat)
 
     dm1s = jnp.einsum("n, m, nmsij -> sij", lc_coeff.conj(), lc_coeff, dm1s) 
