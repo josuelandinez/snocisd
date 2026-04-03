@@ -186,3 +186,109 @@ def gen_nocisd_multiref_general(tvecs_ref, mf, dt=1.0, tol=1e-12):
     Final_Coeffs = np.concatenate(all_coeffs)
     
     return (Final_Ra, Final_Rb, Final_Coeffs)
+
+
+def compress_relaxation_general(myci, civec=None, dt=1.0, tol=1e-12):
+    """
+    3-Point Stencil Compression of CISD (Coupled Spin Rotation).
+    Applies the finite-difference step simultaneously to both alpha and beta 
+    spin blocks. Cuts the AB determinant count in half, but suffers from 
+    unphysical alpha-beta relaxation cross-terms (U^2 + V^2).
+    """
+    if civec is None:
+        civec = myci.ci
+        
+    c0, c1, c2 = myci.cisdvec_to_amplitudes(civec)
+    c1a_act, c1b_act = c1
+    c2aa_act, c2ab_act, c2bb_act = c2
+    
+    mol = myci.mol
+    nocc_a_total, nocc_b_total = int(mol.nelec[0]), int(mol.nelec[1])
+    nmo = myci._scf.mo_coeff[0].shape[1] if hasattr(myci, '_scf') else mol.nao_nr()
+
+    nvir_a_total, nvir_b_total = nmo - nocc_a_total, nmo - nocc_b_total
+    nocc_a_act, nocc_b_act = c1a_act.shape[0], c1b_act.shape[0]
+    occ_start_a, occ_start_b = nocc_a_total - nocc_a_act, nocc_b_total - nocc_b_act
+    nvir_a_act, nvir_b_act = c1a_act.shape[1], c1b_act.shape[1]
+    
+    def pad_to_full(t_active_matrix, spin='a'):
+        full_Z = np.zeros((nvir_a_total, nocc_a_total) if spin == 'a' else (nvir_b_total, nocc_b_total))
+        start_occ = occ_start_a if spin == 'a' else occ_start_b
+        n_v, n_o = t_active_matrix.shape
+        full_Z[0:n_v, start_occ:start_occ+n_o] = t_active_matrix
+        return full_Z
+
+    c0_updated = c0
+
+    ta_list, tb_list, coeffs = [], [], []
+    z_a_ref, z_b_ref = np.zeros((nvir_a_total, nocc_a_total)), np.zeros((nvir_b_total, nocc_b_total))
+    
+    def add_mode(ta, tb, scale, coeff_val):
+        norm_val = np.sqrt(np.sum(ta**2) + np.sum(tb**2))
+        if norm_val < 1e-12: return
+        final_scale = scale * 0.99 if abs(norm_val * scale - 1.0) < 0.02 else scale
+        ta_list.append(ta * final_scale)
+        tb_list.append(tb * final_scale)
+        coeffs.append(coeff_val)
+
+    # === SINGLES === (Exact same as 4-point)
+    coeff_t1 = 0.5 / dt
+    add_mode(pad_to_full(c1a_act.T, 'a'), z_b_ref, dt, coeff_t1)
+    add_mode(-pad_to_full(c1a_act.T, 'a'), z_b_ref, dt, -coeff_t1)
+    add_mode(z_a_ref, pad_to_full(c1b_act.T, 'b'), dt, coeff_t1)
+    add_mode(z_a_ref, -pad_to_full(c1b_act.T, 'b'), dt, -coeff_t1)
+    
+    # === DOUBLES ===
+    c2aa_act = c2aa_act / 4.0
+    c2bb_act = c2bb_act / 4.0
+    dim_a_act, dim_b_act = nvir_a_act * nocc_a_act, nvir_b_act * nocc_b_act
+    
+    # -- AA Block (Symmetric 3-Point) --
+    coeff_t2_2pt = 1.0 / (dt**2)
+    mat_aa = c2aa_act.transpose(2, 0, 3, 1).reshape(dim_a_act, dim_a_act)
+    vals, vecs = np.linalg.eigh(mat_aa)
+    idx = np.abs(vals) > tol
+    for s_val, v_vec in zip(vals[idx], vecs[:, idx].T):
+        zv = pad_to_full(v_vec.reshape(nvir_a_act, nocc_a_act), 'a') * np.sqrt(np.abs(s_val))
+        c_mode = coeff_t2_2pt * np.sign(s_val)
+        add_mode(zv, z_b_ref, dt, c_mode)
+        add_mode(-zv, z_b_ref, dt, c_mode)
+        c0_updated -= 2.0 * c_mode
+
+    # -- BB Block (Symmetric 3-Point) --
+    if dim_b_act > 0: 
+        mat_bb = c2bb_act.transpose(2, 0, 3, 1).reshape(dim_b_act, dim_b_act)
+        vals, vecs = np.linalg.eigh(mat_bb)
+        idx = np.abs(vals) > tol
+        for s_val, v_vec in zip(vals[idx], vecs[:, idx].T):
+            zv = pad_to_full(v_vec.reshape(nvir_b_act, nocc_b_act), 'b') * np.sqrt(np.abs(s_val))
+            c_mode = coeff_t2_2pt * np.sign(s_val)
+            add_mode(z_a_ref, zv, dt, c_mode)
+            add_mode(z_a_ref, -zv, dt, c_mode)
+            c0_updated -= 2.0 * c_mode
+
+    # -- AB Block (Mixed Spin SVD -> 3-Point Stencil) --
+    # THIS IS THE ONLY DIFFERENCE!
+    coeff_t2_3pt = 0.5 / (dt**2)
+    mat_ab = c2ab_act.transpose(2, 0, 3, 1).reshape(dim_a_act, dim_b_act)
+    
+    U, S, Vt = np.linalg.svd(mat_ab, full_matrices=False)
+    idx = S > tol
+    for s_val, u_vec, v_vec in zip(S[idx], U.T[idx], Vt.conj()):
+        wa = pad_to_full(u_vec.reshape(nvir_a_act, nocc_a_act), 'a') * np.sqrt(s_val)
+        wb = pad_to_full(v_vec.reshape(nvir_b_act, nocc_b_act), 'b') * np.sqrt(s_val)
+        
+        c_mode = coeff_t2_3pt
+        
+        # Simultaneous +dt and -dt steps
+        add_mode(wa, wb, dt, c_mode)
+        add_mode(-wa, -wb, dt, c_mode)
+        
+        # CRITICAL: 3-point stencil requires subtracting 2 * c_mode from the HF state!
+        c0_updated -= 2.0 * c_mode
+
+    T_a = np.array([z_a_ref] + ta_list)
+    T_b = np.array([z_b_ref] + tb_list)
+    all_coeffs = np.array([c0_updated] + coeffs)
+    
+    return (T_a, T_b, all_coeffs)

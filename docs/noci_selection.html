@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>NOCI Selection Methods</title>
+  <style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="/usr/share/javascript/mathjax/MathJax.js"
+  type="text/javascript"></script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">NOCI Selection Methods</h1>
+</header>
+<h2 id="the-sun-dutta-selection-method">1. The Sun-Dutta Selection
+Method</h2>
+<p>When generating thousands of non-orthogonal determinants (e.g., via
+finite difference of CISD/CCSD amplitudes), the majority of them offer
+redundant geometrical and physical information. Including all of them
+results in an ill-conditioned, computationally explosive Overlap
+matrix.</p>
+<p>The Sun-Dutta selection method is a greedy, forward-selection
+algorithm designed to build a compact active space by evaluating
+candidates one-by-one against the <em>currently accepted</em> NOCI wave
+function (<span
+class="math inline">\(|\Psi_{\text{active}}\rangle\)</span>).</p>
+<p>For each candidate determinant <span
+class="math inline">\(|\Phi_i\rangle\)</span>, the algorithm performs
+two rigorous checks:</p>
+<p><strong>Step 1: The Geometric Shield (Linear Independence)</strong>
+Before calculating any energies, the algorithm checks the orthogonal
+distance of <span class="math inline">\(|\Phi_i\rangle\)</span> from the
+active space. It calculates the orthogonal projection remainder
+(<code>proj_new</code>): <span class="math display">\[\text{proj\_new} =
+1.0 - \frac{\langle \Phi_i | \mathbf{S}_{\text{inv}} | \Phi_i
+\rangle}{S_{ii}}\]</span> If <code>proj_new</code> is smaller than a
+strict tolerance (e.g., <span class="math inline">\(10^{-8}\)</span>),
+the determinant is heavily parallel to the existing active space. It is
+instantly rejected to prevent the Overlap matrix from becoming
+singular.</p>
+<p><strong>Step 2: The Physical Evaluation (The <span
+class="math inline">\(2 \times 2\)</span> Matrix)</strong> If the
+determinant passes the geometric shield, a <span class="math inline">\(2
+\times 2\)</span> subspace is constructed using the current NOCI state
+and the new candidate: <span
+class="math display">\[\mathbf{H}_{2\times2} = \begin{pmatrix} \langle
+\Psi_{\text{active}} | \hat{H} | \Psi_{\text{active}} \rangle &amp;
+\langle \Psi_{\text{active}} | \hat{H} | \Phi_i \rangle \\ \langle
+\Phi_i | \hat{H} | \Psi_{\text{active}} \rangle &amp; \langle \Phi_i |
+\hat{H} | \Phi_i \rangle \end{pmatrix}\]</span> This <span
+class="math inline">\(2 \times 2\)</span> system is diagonalized. If the
+new lowest eigenvalue <span class="math inline">\(\epsilon_0\)</span>
+lowers the total energy by more than a predefined threshold (<span
+class="math inline">\(\Delta E &gt; 10^{-10}\)</span> Ha), the
+determinant is permanently accepted, and <span
+class="math inline">\(|\Psi_{\text{active}}\rangle\)</span> is
+updated.</p>
+<hr />
+<h2 id="the-flaw-of-order-bias-and-the-need-for-sorting">2. The Flaw of
+“Order Bias” and the Need for Sorting</h2>
+<p>A pure Sun-Dutta algorithm evaluates candidates in the arbitrary
+order they are generated. This introduces a fatal flaw known as
+<strong>Order Bias</strong>.</p>
+<p>If the algorithm evaluates a “mediocre” determinant early in the
+list, it might accept it because it lowers the energy slightly. However,
+this locks that specific geometry into the active space. When the
+algorithm later encounters a “fantastic”, highly correlated determinant
+that happens to be geometrically similar to the mediocre one, the
+Geometric Shield will reject the fantastic determinant! The active space
+becomes clogged with sub-optimal physics.</p>
+<p><strong>The Solution:</strong> To cure Order Bias, the candidate pool
+must be <strong>Sorted</strong> prior to evaluation. By ranking the
+determinants from most physically important to least important, we
+guarantee that the absolute strongest correlation vectors claim the
+available geometric space first. * <strong>Energy Sort:</strong>
+Evaluate the <span class="math inline">\(2 \times 2\)</span> energy of
+every candidate against the HF reference and sort by the energy
+lowering. * <strong>Amplitude Proxy:</strong> (Zero-cost) Sort the
+candidate pool directly by the absolute value of the original CISD/CCSD
+amplitude that generated the finite-difference vector. *
+<strong>Iterative Thresholding (CIPSI-style):</strong> Sweep the
+unsorted pool multiple times, starting with a massive energy tolerance
+(e.g., <span class="math inline">\(10^{-3}\)</span>) and slowly lowering
+it to <span class="math inline">\(10^{-10}\)</span>. This pseudo-sort
+ensures the heavy hitters are always accepted in the first sweep.</p>
+<hr />
+<h2 id="the-global-geometric-shield-qrcp">3. The Global Geometric Shield
+(QRCP)</h2>
+<p>Even with sorting, building a massive NOCI active space using only
+the local Sun-Dutta geometric check (<code>proj_new</code>) is
+dangerous. Evaluating local orthogonal projections step-by-step slowly
+accumulates floating-point errors—a phenomenon known as “Gram-Schmidt
+rot.” Eventually, microscopic linear dependencies slip through, the
+active space Overlap matrix becomes singular, and the variational energy
+violently collapses.</p>
+<p>To physically prevent this, we apply a global mathematical shield
+<em>before</em> running the Sun-Dutta filter using <strong>QR
+Decomposition with Column Pivoting (QRCP)</strong>.</p>
+<p>By running QRCP on the global Overlap matrix (<span
+class="math inline">\(\mathbf{S}\)</span>), the algorithm strictly
+factors the matrix to find the mathematical rank of the space. It
+explicitly identifies the minimal set of columns that span the entire
+geometric space up to a strict tolerance (e.g., <span
+class="math inline">\(10^{-7}\)</span>). Any determinant not in this
+pivot list is, by mathematical definition, a linear combination of the
+safe base. By restricting the Sun-Dutta filter to evaluate <em>only</em>
+the vectors pre-approved by the QRCP algorithm, a variational collapse
+becomes mathematically impossible.</p>
+<hr />
+<h2 id="breaking-the-scaling-wall-matrix-free-pivoted-cholesky">4.
+Breaking the Scaling Wall: Matrix-Free Pivoted Cholesky</h2>
+<p>While global QRCP is mathematically flawless, it hits a hard
+computational ceiling. QRCP requires building and storing the entire
+dense <span class="math inline">\(N \times N\)</span> Overlap matrix,
+which scales as <span class="math inline">\(\mathcal{O}(N^3)\)</span>.
+In multi-reference Resonating Hartree-Fock expansions, the determinant
+pool can easily exceed 40,000 vectors, making the full matrix evaluation
+impossible.</p>
+<p>To bypass this scaling wall, we replace standard QRCP with
+<strong>Matrix-Free Pivoted Cholesky Decomposition</strong>.</p>
+<p>Because the Overlap matrix <span
+class="math inline">\(\mathbf{S}\)</span> is a Gram matrix (symmetric
+and positive semi-definite), applying Pivoted Cholesky decomposition to
+<span class="math inline">\(\mathbf{S}\)</span> yields the exact same
+geometric independent subset (the pivot array) as running QRCP on the
+wavefunctions.</p>
+<p>By only calculating the exact physics needed to find the next
+orthogonal dimension, Matrix-Free Cholesky reduces the scaling of the
+global geometric shield from <span
+class="math inline">\(\mathcal{O}(N^3)\)</span> to <span
+class="math inline">\(\mathcal{O}(N \cdot k^2)\)</span> (where <span
+class="math inline">\(k\)</span> is the true rank of the space). This
+allows us to rapidly and safely extract the independent basis from tens
+of thousands of multireference determinants without memory
+exhaustion.</p>
+<hr />
+<h2 id="explicit-mathematical-formulations-and-proof-of-equivalence">5.
+Explicit Mathematical Formulations and Proof of Equivalence</h2>
+<p>To understand why the <span
+class="math inline">\(\mathcal{O}(N^3)\)</span> QRCP method and the
+<span class="math inline">\(\mathcal{O}(N)\)</span> Matrix-Free Cholesky
+method are geometric twins, we must examine the explicit equations that
+govern them.</p>
+<h3 id="qrcp-on-the-wavefunctions">5.1 QRCP on the Wavefunctions</h3>
+<p>Consider a theoretical matrix <span
+class="math inline">\(\mathbf{A}\)</span> of dimensions <span
+class="math inline">\(M \times N\)</span>, where each of the <span
+class="math inline">\(N\)</span> columns is a generated many-electron
+Slater determinant. QR Decomposition with Column Pivoting factors <span
+class="math inline">\(\mathbf{A}\)</span> into an orthogonal matrix
+<span class="math inline">\(\mathbf{Q}\)</span> and an upper-triangular
+matrix <span class="math inline">\(\mathbf{R}\)</span>, while applying a
+permutation matrix <span class="math inline">\(\mathbf{P}\)</span> to
+reorder the columns: <span class="math display">\[\mathbf{A} \mathbf{P}
+= \mathbf{Q} \mathbf{R}\]</span></p>
+<p>At each step, QRCP selects the column with the maximum <span
+class="math inline">\(L_2\)</span> norm, swaps it to the front via <span
+class="math inline">\(\mathbf{P}\)</span>, and projects its geometry out
+of the remaining vectors.</p>
+<h3 id="pivoted-cholesky-on-the-gram-matrix">5.2 Pivoted Cholesky on the
+Gram Matrix</h3>
+<p>In quantum chemistry, we rarely build the dense wavefunction matrix
+<span class="math inline">\(\mathbf{A}\)</span>. Instead, we compute the
+Gram matrix (Overlap matrix, <span
+class="math inline">\(\mathbf{S}\)</span>), which is symmetric and
+positive semi-definite: <span class="math display">\[\mathbf{S} =
+\mathbf{A}^T \mathbf{A}\]</span></p>
+<p>Pivoted Cholesky Decomposition factors this matrix into a
+lower-triangular matrix <span class="math inline">\(\mathbf{L}\)</span>
+and its transpose: <span class="math display">\[\mathbf{P}^T \mathbf{S}
+\mathbf{P} = \mathbf{L} \mathbf{L}^T\]</span></p>
+<h3 id="proof-of-equivalence">5.3 Proof of Equivalence</h3>
+<p>We can prove that these algorithms yield the exact same geometric
+selection by substituting the QRCP factorization into the definition of
+the Overlap matrix. Applying the column permutation <span
+class="math inline">\(\mathbf{P}\)</span> to both rows and columns of
+<span class="math inline">\(\mathbf{S}\)</span>: <span
+class="math display">\[\mathbf{P}^T \mathbf{S} \mathbf{P} = \mathbf{P}^T
+(\mathbf{A}^T \mathbf{A}) \mathbf{P} = (\mathbf{A} \mathbf{P})^T
+(\mathbf{A} \mathbf{P})\]</span></p>
+<p>Substitute <span class="math inline">\(\mathbf{Q}\mathbf{R}\)</span>
+in place of <span class="math inline">\(\mathbf{A}\mathbf{P}\)</span>:
+<span class="math display">\[\mathbf{P}^T \mathbf{S} \mathbf{P} =
+(\mathbf{Q} \mathbf{R})^T (\mathbf{Q} \mathbf{R}) = \mathbf{R}^T
+\mathbf{Q}^T \mathbf{Q} \mathbf{R}\]</span></p>
+<p>Because <span class="math inline">\(\mathbf{Q}\)</span> is an
+orthogonal matrix, <span class="math inline">\(\mathbf{Q}^T \mathbf{Q} =
+\mathbf{I}\)</span>, causing it to drop out of the equation: <span
+class="math display">\[\mathbf{P}^T \mathbf{S} \mathbf{P} = \mathbf{R}^T
+\mathbf{R}\]</span></p>
+<p>Let <span class="math inline">\(\mathbf{L} = \mathbf{R}^T\)</span>.
+Because <span class="math inline">\(\mathbf{R}\)</span> is
+upper-triangular, <span class="math inline">\(\mathbf{L}\)</span> must
+be lower-triangular. Substituting this gives the exact definition of
+Pivoted Cholesky: <span class="math display">\[\mathbf{P}^T \mathbf{S}
+\mathbf{P} = \mathbf{L} \mathbf{L}^T\]</span> Therefore, factoring the
+Overlap matrix <span class="math inline">\(\mathbf{S}\)</span> using
+Pivoted Cholesky mathematically guarantees the exact same permutation
+matrix <span class="math inline">\(\mathbf{P}\)</span> as running QRCP
+on the true wavefunctions.</p>
+<h3 id="the-matrix-free-cholesky-algorithm">5.4 The Matrix-Free Cholesky
+Algorithm</h3>
+<p>The Matrix-Free variant computes <span
+class="math inline">\(\mathbf{L}\)</span> column by column without ever
+building the dense global matrix <span
+class="math inline">\(\mathbf{S}\)</span>.</p>
+<p><strong>Step 0: Initialize the Diagonals</strong> Let <span
+class="math inline">\(\mathbf{d}\)</span> be an array of length <span
+class="math inline">\(N\)</span> representing the active diagonal of
+<span class="math inline">\(\mathbf{S}\)</span> (the initial
+self-overlap): <span class="math display">\[d_i^{(0)} = S_{ii} \quad
+\text{for } i = 1 \dots N\]</span></p>
+<p><strong>Step 1: The Pivot Selection</strong> Find the determinant
+with the largest remaining orthogonal distance (Schur complement) to be
+the pivot <span class="math inline">\(p_k\)</span>: <span
+class="math display">\[p_k = \arg\max_{i} \left( d_i^{(k-1)}
+\right)\]</span></p>
+<p><strong>Step 2: Lazy Column Evaluation</strong> Compute only the
+single column of overlaps between the chosen pivot <span
+class="math inline">\(p_k\)</span> and all other determinants <span
+class="math inline">\(i\)</span>: <span class="math display">\[S_{i,
+p_k} = \langle \Phi_i | \Phi_{p_k} \rangle\]</span></p>
+<p><strong>Step 3: Compute the Cholesky Vector</strong> Calculate the
+<span class="math inline">\(k\)</span>-th column of <span
+class="math inline">\(\mathbf{L}\)</span> by subtracting the geometric
+overlap accounted for in previous steps: <span
+class="math display">\[L_{i,k} = \frac{S_{i, p_k} - \sum_{j=0}^{k-1}
+L_{i,j} L_{p_k, j}}{\sqrt{d_{p_k}^{(k-1)}}}\]</span></p>
+<p><strong>Step 4: Update the Diagonals (The Schur Complement)</strong>
+Update the remaining diagonals by projecting out the geometric volume
+captured by the new vector: <span class="math display">\[d_i^{(k)} =
+d_i^{(k-1)} - L_{i,k}^2\]</span></p>
+<p><strong>Step 5: The Truncation Condition</strong> If the maximum
+value of the newly updated diagonals drops below the numerical tolerance
+(e.g., <span class="math inline">\(10^{-7}\)</span>), the remaining
+space is fully spanned by the active basis, and the algorithm
+terminates: <span class="math display">\[\max(\mathbf{d}^{(k)}) &lt;
+\epsilon_{\text{tol}}\]</span></p>
+</body>
+</html>
